@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="keyward">
+  <title>keyward</title>
+  <!--
+    A warded keyhole. A ward is the obstruction inside a lock that stops any key
+    but the right one — the word the tool is named after.
+
+    One ring. Earlier drafts had three, then two; every ring past the first read
+    as detail at the sizes the mark is actually used, and the silhouette is
+    strongest with none of them. The ring opens at top and bottom so it frames
+    the keyhole rather than enclosing it.
+  -->
+  <g stroke="currentColor" stroke-linecap="round">
+    <path d="M38.10 20.52A13 13 0 0 1 38.10 43.48" stroke-width="3.4"/>
+    <path d="M25.90 20.52A13 13 0 0 0 25.90 43.48" stroke-width="3.4"/>
+  </g>
+
+  <g fill="currentColor">
+    <circle cx="32" cy="27" r="6.5"/>
+    <path d="M29.8 30 28 41.8A1.6 1.6 0 0 0 29.6 43.6H34.4A1.6 1.6 0 0 0 36 41.8L34.2 30Z"/>
+  </g>
+</svg>

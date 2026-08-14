@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # ci, not install: builds from the lockfile exactly, so what runs here is
+      # what a contributor gets.
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm test
+
+      # The claim on the front of the README, checked rather than asserted.
+      # Node rather than a shell one-liner: the Windows runner would run that
+      # under PowerShell, where it is a syntax error.
+      - name: No runtime dependencies
+        run: >
+          node -e "const d = Object.keys(require('./package.json').dependencies || {});
+          if (d.length) { console.error('package.json declares ' + d.length + ' runtime dependencies (' + d.join(', ') + '); keyward has none by design.'); process.exit(1); }"
+
+
+      - name: No known vulnerabilities in the build toolchain
+        run: npm audit --audit-level=high

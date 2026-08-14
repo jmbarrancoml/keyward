@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="keyward">
+  <title>keyward</title>
+  <!-- App icon: the mark on a squircle. Monochrome throughout; the only
+       separation is brightness, so it holds up at any size and in any theme. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#232327"/>
+      <stop offset="1" stop-color="#0b0b0d"/>
+    </linearGradient>
+    <linearGradient id="fg" x1=".2" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c9c9cf"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+
+  <!-- Scaled up from the 5.6 the three-ring draft used: with one ring the mark
+       occupies far less of its 64-unit box, so it needs more of the squircle.
+       Content is 29.4 x 26.4 units around centre (32,32); at 10.2 that is
+       300 x 269 px, optically centred by translate = 256 - 32 * 10.2. -->
+  <g transform="translate(-70.4 -70.4) scale(10.2)">
+    <g stroke="url(#fg)" stroke-linecap="round" fill="none">
+      <path d="M38.10 20.52A13 13 0 0 1 38.10 43.48" stroke-width="3.4"/>
+      <path d="M25.90 20.52A13 13 0 0 0 25.90 43.48" stroke-width="3.4"/>
+    </g>
+
+    <g fill="url(#fg)">
+      <circle cx="32" cy="27" r="6.5"/>
+      <path d="M29.8 30 28 41.8A1.6 1.6 0 0 0 29.6 43.6H34.4A1.6 1.6 0 0 0 36 41.8L34.2 30Z"/>
+    </g>
+  </g>
+</svg>

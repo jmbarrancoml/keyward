@@ -1,0 +1,1935 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>keyward</title>
+<!-- Inlined so the page still loads nothing from the network. Two variants
+     because a tab strip is dark or light depending on the OS theme. -->
+<link rel="icon" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 fill=%22none%22%3E%3Cg stroke=%22%233f3f46%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M38.10 20.52A13 13 0 0 1 38.10 43.48%22 stroke-width=%224.6%22/%3E%3Cpath d=%22M25.90 20.52A13 13 0 0 0 25.90 43.48%22 stroke-width=%224.6%22/%3E%3C/g%3E%3Cg fill=%22%233f3f46%22%3E%3Ccircle cx=%2232%22 cy=%2227%22 r=%226.8%22/%3E%3Cpath d=%22M29.7 30 27.9 41.9A1.7 1.7 0 0 0 29.6 43.6H34.4A1.7 1.7 0 0 0 36.1 41.9L34.3 30Z%22/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="icon" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 fill=%22none%22%3E%3Cg stroke=%22%23d4d4d8%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M38.10 20.52A13 13 0 0 1 38.10 43.48%22 stroke-width=%224.6%22/%3E%3Cpath d=%22M25.90 20.52A13 13 0 0 0 25.90 43.48%22 stroke-width=%224.6%22/%3E%3C/g%3E%3Cg fill=%22%23d4d4d8%22%3E%3Ccircle cx=%2232%22 cy=%2227%22 r=%226.8%22/%3E%3Cpath d=%22M29.7 30 27.9 41.9A1.7 1.7 0 0 0 29.6 43.6H34.4A1.7 1.7 0 0 0 36.1 41.9L34.3 30Z%22/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  /*
+    The screen answers one question — "is anything wrong, and what do I do" —
+    in the first paragraph, and hides everything else behind a disclosure.
+    An earlier pass showed four tables at once and assumed the reader already
+    knew what a dormant key was. They did not, and neither will a producer
+    opening this once a month.
+
+    So: plain words over vocabulary, one verdict over five figures, and detail
+    on request. Monospace is now only for things that really are codes — keys,
+    counts, dates — because setting the whole structure in it made the tool read
+    as a terminal, which put people off before they read a word.
+
+    Colour is monochrome by instruction, and there are exactly two text tones.
+    There is deliberately no third, washed-out tier: the previous palette had
+    one and it failed WCAG AA in all four of its uses. Every pairing clears
+    5.9:1; de-emphasis is size, weight and tracking instead.
+  */
+  :root {
+    --page: #f1f1f3;
+    --surface: #ffffff;
+    --sunken: #e8e8eb;
+    --ink: #101013;
+    --ink-2: #56565f;
+    --rule: #e3e3e6;
+    --field: #ffffff;
+    --radius: 12px;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Cascadia Mono", monospace;
+    --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 8px 24px rgb(0 0 0 / .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0b0b0d;
+      --surface: #151517;
+      --sunken: #1e1e21;
+      --ink: #f0f0f2;
+      --ink-2: #9a9aa4;
+      --rule: #292a2e;
+      --field: #0e0e10;
+      --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 28px rgb(0 0 0 / .5);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 15px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+  .key, .fig { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  /* Dates read as words now, so they are set in the sans — but still lined up. */
+  .when { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /*
+    Shops get a monogram, not their real favicon. Fetching one would tell that
+    shop a studio is watching them, and would break the page's rule of loading
+    nothing from the network — and their brand colours have no place in a
+    monochrome interface anyway.
+  */
+  .shopmark {
+    display: inline-grid; place-items: center; width: 26px; height: 26px; flex: none;
+    border-radius: 8px; background: var(--sunken); color: var(--ink-2);
+    font-size: 13px; font-weight: 600; margin-right: 11px; vertical-align: -8px;
+  }
+  img.shopmark { object-fit: contain; padding: 3px; }
+
+  /* ---------- controls ---------- */
+  button {
+    font: 500 14px/1 var(--sans); color: var(--ink);
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 10px 14px; min-height: 34px;
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    transition: background .12s ease;
+  }
+  button:hover { background: var(--sunken); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--ink); color: var(--page); border-color: transparent; }
+  button.primary:hover { opacity: .86; background: var(--ink); }
+  button.quiet { background: none; border-color: transparent; color: var(--ink-2); }
+  button.quiet:hover { background: var(--sunken); color: var(--ink); }
+
+  input, select, textarea {
+    font: 15px/1.5 var(--sans); color: var(--ink); width: 100%;
+    background: var(--field); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 10px 12px; min-height: 40px;
+  }
+  input.key-input, textarea { font-family: var(--mono); font-size: 14px; }
+  textarea { min-height: 132px; resize: vertical; line-height: 1.6; }
+  ::placeholder { color: var(--ink-2); opacity: .7; }
+  a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--ink-2); }
+
+  /*
+    Only the content scrolls. The sidebar and the tab bar stay put, so you never
+    lose the game you are in or the way back to another tab while reading a long
+    table.
+  */
+  .layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); height: 100vh; overflow: hidden; }
+  .side { padding: 22px 16px 40px; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 7px; padding: 0 6px 20px; }
+  .brand span { font-weight: 600; font-size: 16px; letter-spacing: -.015em; }
+  #demo-flag:not(:empty) { padding: 0 8px 16px; }
+  .eyebrow { font-size: 13px; color: var(--ink-2); margin: 0 8px 8px; font-weight: 500; }
+  .game-item {
+    width: 100%; display: block; text-align: left; background: none; border: none;
+    border-radius: 9px; padding: 10px; min-height: 0;
+  }
+  .game-item:hover { background: var(--sunken); }
+  .game-item[aria-current="true"] { background: var(--surface); box-shadow: var(--shadow); }
+  .game-item b { display: block; font-weight: 500; font-size: 15px; }
+  .game-item small { font-size: 13px; color: var(--ink-2); }
+
+  /*
+    The shell runs the full width so tables get the room they want. Prose caps
+    itself instead: a verdict set 1600px wide is unreadable, a table that stops
+    at 940px wastes half the window.
+  */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .main-head { flex: none; padding: 26px 32px 0; }
+  .main-scroll { flex: 1 1 auto; overflow-y: auto; padding: 0 32px 90px; }
+  /* The prose caps itself, never the card around it: a verdict card that stops
+     short while the one beneath it runs full width just looks broken. */
+  .finding p, .lede, .note, .empty { max-width: 74ch; }
+  .title { font-size: 21px; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+
+  /* The game's own header: its art, its name, and a way to its store page. */
+  .gamehead { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .gameart {
+    width: 92px; height: 35px; flex: none; object-fit: cover;
+    border-radius: 7px; background: var(--sunken);
+  }
+  .namerow { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  /* Sits with the name, as part of it. No chrome — the mark is the affordance. */
+  .storelink {
+    display: inline-flex; align-items: center; flex: none;
+    padding: 4px; border-radius: 6px; opacity: .75; text-decoration: none;
+  }
+  .storelink:hover { opacity: 1; background: var(--sunken); }
+  .storelink img, .storelink svg { width: 19px; height: 19px; object-fit: contain; }
+  .gameitem-art {
+    width: 100%; height: 44px; object-fit: cover; border-radius: 7px;
+    margin-bottom: 7px; background: var(--sunken); display: block;
+  }
+
+  /*
+    Tabs, not disclosures. Folding the detail away made the screen calm but
+    also made it feel like the tool was deciding what you were allowed to see.
+    A tab bar does the opposite: it is a map of everything that exists, and
+    every part of it is one click away.
+
+    The selected tab is marked by tone, not an underline or a colour, so it
+    holds up in both appearances.
+  */
+  .tabs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tab {
+    background: none; border: 1px solid transparent; color: var(--ink-2);
+    padding: 9px 12px; border-radius: 9px; font-weight: 500; gap: 8px;
+  }
+  .tab svg { flex: none; opacity: .8; }
+  .tab[aria-selected="true"] svg { opacity: 1; }
+  .tab:hover { background: var(--sunken); color: var(--ink); }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  /* Counts read as badges rather than as part of the label. */
+  .tab .count {
+    display: inline-grid; place-items: center; min-width: 21px; height: 21px;
+    padding: 0 6px; margin-left: 7px; border-radius: 999px;
+    background: var(--sunken); color: var(--ink-2);
+    font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .tab[aria-selected="true"] .count { background: var(--ink); color: var(--page); }
+  .tabs .spacer { flex: 1 1 auto; }
+
+  .card { background: var(--surface); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 12px; }
+  .card > h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .toolbar .grow { flex: 1 1 200px; min-width: 160px; }
+  /* Looks like the buttons beside it, but has to be an anchor to download. */
+  .exportlink {
+    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+    font: 500 14px/1 var(--sans); color: var(--ink-2);
+    padding: 10px 14px; min-height: 34px; border-radius: 9px;
+  }
+  .exportlink:hover { background: var(--sunken); color: var(--ink); }
+  .chip {
+    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+    padding: 8px 12px; border-radius: 999px; font-size: 14px; min-height: 32px;
+  }
+  .chip:hover { background: var(--sunken); color: var(--ink); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: transparent; }
+
+  /* ---------- the verdict: the whole point of the screen ---------- */
+  .verdict { background: var(--surface); border-radius: var(--radius); padding: 26px 28px; margin-bottom: 26px; }
+  .since {
+    background: var(--ink); color: var(--page); border-radius: var(--radius);
+    padding: 12px 18px; margin: 0 0 12px; font-size: 14px; font-weight: 500;
+  }
+  .verdict h2 {
+    font-size: 25px; line-height: 1.28; font-weight: 600; letter-spacing: -.02em;
+    margin: 0 0 10px; max-width: 22ch;
+  }
+  .verdict p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; max-width: 60ch; }
+  .verdict p + p { margin-top: 9px; }
+  .verdict .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+
+  .lede { color: var(--ink-2); font-size: 14px; line-height: 1.6; margin: 0 0 14px; max-width: 66ch; }
+  .empty { color: var(--ink-2); margin: 0; }
+  .empty b { color: var(--ink); font-weight: 500; }
+  .note {
+    background: var(--sunken); border-radius: 9px; padding: 13px 15px; margin: 16px 0 0;
+    font-size: 14px; line-height: 1.6; color: var(--ink-2);
+  }
+  .note b { color: var(--ink); font-weight: 500; }
+  .note code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  /*
+    Tables are the working surface, not a printout. The header stays put while
+    the rows move, the columns sort, and a cell filters the view to itself —
+    seeing "publisher-partners" and wanting only that batch is the commonest
+    next thought, so it should not require retyping it into a search box.
+  */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    position: sticky; top: 0; z-index: 2;
+    text-align: left; font-size: 13px; font-weight: 600; color: var(--ink-2);
+    letter-spacing: .03em; text-transform: uppercase;
+    padding: 9px 12px 9px 10px; white-space: nowrap;
+    background: var(--sunken);
+  }
+  thead th:first-child { border-radius: 8px 0 0 8px; }
+  thead th:last-child { border-radius: 0 8px 8px 0; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--ink); }
+  th .arrow { display: inline-block; margin-left: 5px; opacity: .55; }
+  th[aria-sort] { color: var(--ink); }
+  th[aria-sort] .arrow { opacity: 1; }
+
+  td { padding: 9px 12px 9px 10px; vertical-align: middle; }
+  tbody tr { border-bottom: 1px solid var(--rule); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--sunken); }
+  .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .key { font-size: 13px; white-space: nowrap; }
+  .sub { display: block; font-size: 13px; color: var(--ink-2); }
+
+  /* A cell you can click to narrow the view to it. */
+  .drill {
+    background: none; border: none; padding: 3px 7px; margin: -3px -7px;
+    border-radius: 6px; font: inherit; color: inherit; min-height: 0;
+    text-align: left; max-width: 100%;
+  }
+  .drill:hover { background: var(--rule); }
+  .drill:hover::after { content: " ↓"; opacity: .5; }
+
+  .activefilters { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .activefilters .label { font-size: 13px; color: var(--ink-2); }
+  .fchip {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--ink); color: var(--page); border: none;
+    border-radius: 999px; padding: 5px 11px; font-size: 13px; min-height: 28px;
+  }
+  .fchip:hover { opacity: .85; background: var(--ink); }
+  .fchip .x { font-size: 15px; line-height: 1; opacity: .7; }
+
+  /*
+    Severity is spelled out in words first, because a reader should never have
+    to decode a graphic to learn how sure the tool is. The gutter reinforces the
+    word by tapering in weight — the same idea as the logo's rings — so the list
+    can be skimmed once the vocabulary is familiar.
+  */
+  .finding { position: relative; padding: 20px 0 22px 20px; }
+  .finding + .finding { border-top: 1px solid var(--rule); }
+  .finding::before {
+    content: ""; position: absolute; left: 0; top: 22px; bottom: 24px;
+    border-radius: 2px; background: var(--ink);
+  }
+  .finding[data-sev="certain"]::before { width: 4px; }
+  .finding[data-sev="high"]::before    { width: 3px; }
+  .finding[data-sev="medium"]::before  { width: 2px; background: var(--ink-2); }
+  .finding[data-sev="low"]::before     { width: 1px; background: var(--ink-2); }
+
+  /* How sure we are comes first and is unmistakably a label, not a heading.
+     Reading the claim before knowing its weight is the wrong order. */
+  .finding .sev {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: .07em; text-transform: uppercase;
+    color: var(--ink-2); margin-bottom: 7px;
+  }
+  .finding .sev svg { flex: none; }
+  .finding[data-sev="certain"] .sev, .finding[data-sev="high"] .sev { color: var(--ink); }
+
+  .finding b {
+    display: block; font-size: 17px; font-weight: 600; line-height: 1.38;
+    letter-spacing: -.012em; margin-bottom: 9px; max-width: 44ch;
+  }
+  .finding p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--ink-2); max-width: 56ch; }
+
+  /*
+    The key component. A key is the one thing in this tool you actually need to
+    do something with — copy it into an email, look it up, record where you
+    found it — so everywhere a key appears it is the same object with the same
+    affordances rather than inert text.
+
+    Keys are atomic: running them together as prose let one wrap mid-code, which
+    makes it unreadable and uncopyable.
+  */
+  .finding .keys { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .keychip {
+    position: relative; display: inline-flex; align-items: stretch;
+    background: var(--sunken); border-radius: 7px; overflow: hidden;
+    vertical-align: middle; max-width: 100%;
+  }
+  .keychip button {
+    background: none; border: none; border-radius: 0; color: var(--ink-2);
+    min-height: 30px; padding: 6px 10px; gap: 9px; font-weight: 400;
+  }
+  .keychip button:hover { background: var(--rule); color: var(--ink); }
+  .keychip-copy { align-items: center; }
+  .keychip-copy > svg { flex: none; }
+  .keychip-lines { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+  .keychip-code { font-family: var(--mono); font-size: 13px; white-space: nowrap; line-height: 1.35; }
+  /* Who holds it, under the code — the question asked of a key most often. */
+  .keychip-owner {
+    font-size: 13px; line-height: 1.3; color: var(--ink-2);
+    max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .keychip-menu { padding: 0 8px; align-self: stretch; }
+  .keychip[data-copied="true"] .keychip-copy > * { visibility: hidden; }
+  .keychip[data-copied="true"] .keychip-copy::after {
+    content: "Copied"; position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 13px; color: var(--ink); font-weight: 500;
+  }
+  /* In a dense table the chrome only appears when it is wanted. */
+  .keychip.plain { background: none; }
+  .keychip.plain .keychip-menu { opacity: 0; }
+  .keychip.plain:hover .keychip-menu,
+  .keychip.plain button:focus-visible ~ .keychip-menu,
+  .keychip.plain .keychip-menu:focus-visible { opacity: 1; }
+  .k {
+    font-family: var(--mono); font-size: 13px; white-space: nowrap;
+    background: var(--sunken); color: var(--ink-2);
+    border: none; border-radius: 7px; padding: 6px 9px; min-height: 28px;
+  }
+  button.k:hover { background: var(--rule); color: var(--ink); }
+
+  .menu {
+    position: fixed; z-index: 20; min-width: 226px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 11px; box-shadow: var(--shadow);
+  }
+  .menu button {
+    width: 100%; justify-content: flex-start; background: none; border: none;
+    border-radius: 7px; padding: 9px 10px; font-weight: 400; color: var(--ink);
+  }
+  .menu button:hover { background: var(--sunken); }
+  /* Where a key came from, without having to open anything. */
+  .peek {
+    position: fixed; z-index: 19; max-width: 300px; padding: 11px 13px;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+    box-shadow: var(--shadow); pointer-events: none; font-size: 13px; line-height: 1.5;
+  }
+  .peek b { display: block; font-weight: 600; margin-bottom: 3px; }
+  .peek span { color: var(--ink-2); }
+  .peek .peek-key { font-family: var(--mono); color: var(--ink-2); margin-top: 5px; display: block; }
+  .menu .menu-key {
+    font-family: var(--mono); font-size: 13px; color: var(--ink-2);
+    padding: 6px 10px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ---------- dialogs ---------- */
+  dialog {
+    border: none; border-radius: 14px; padding: 26px;
+    width: min(560px, calc(100vw - 32px));
+    background: var(--surface); color: var(--ink); box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgb(0 0 0 / .45); }
+  dialog h3 { margin: 0 0 6px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+  dialog .lede { margin: 0 0 20px; }
+  dialog ol { margin: 0 0 20px; padding-left: 20px; color: var(--ink-2); font-size: 14px; line-height: 1.85; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 6px; }
+  /* Sits under the control it explains. Put a hint at the foot of the dialog
+     and it reads as an explanation of whatever field it happens to follow. */
+  .hint { margin: 7px 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+
+  /* Folded away: it is a wall of steps for the first import and noise forever
+     after, and nothing above it should move when it opens. */
+  .guide { background: var(--sunken); border-radius: 9px; margin: 0 0 18px; }
+  .guide > summary {
+    padding: 11px 14px; font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 9px; list-style: none; cursor: pointer;
+    border-radius: 9px;
+  }
+  .guide > summary::-webkit-details-marker { display: none; }
+  .guide > summary::after {
+    content: ""; width: 6px; height: 6px; margin-left: auto;
+    border-right: 1.6px solid var(--ink-2); border-bottom: 1.6px solid var(--ink-2);
+    transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s ease;
+  }
+  .guide[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+  .guide ol { margin: 0; padding: 0 16px 4px 34px; font-size: 13px; line-height: 1.7; }
+  .guide li { margin-bottom: 5px; }
+  .guide .hint { padding: 0 14px 13px; margin-top: 4px; }
+
+  /* Two ways in, side by side, so neither looks like the only one. */
+  .drop {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--sunken); border: 1px dashed var(--rule); border-radius: 9px;
+    padding: 14px; margin-bottom: 12px; cursor: pointer;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .drop:hover, .drop.over { border-color: var(--ink); background: var(--rule); }
+  .drop svg { flex: none; opacity: .7; }
+  .drop b { display: block; font-weight: 500; font-size: 14px; }
+  .drop span { font-size: 13px; color: var(--ink-2); }
+  .drop input[type="file"] { display: none; }
+  .or { text-align: center; font-size: 13px; color: var(--ink-2); margin: 0 0 12px; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+  .result {
+    font-family: var(--mono); font-size: 16px; letter-spacing: .02em;
+    background: var(--sunken); border-radius: 9px; padding: 15px; margin: 0; word-break: break-all;
+  }
+  .facts { margin-top: 18px; }
+  .facts td:first-child { color: var(--ink-2); width: 108px; font-size: 14px; }
+  .err {
+    margin: 18px 0 0; padding: 12px 14px; font-size: 14px; line-height: 1.6;
+    background: var(--sunken); border-left: 3px solid var(--ink); border-radius: 0 9px 9px 0;
+  }
+
+  /* ---------- progress + toast ---------- */
+  .progress { font-size: 14px; color: var(--ink-2); margin: 0; }
+  .bar { height: 3px; background: var(--sunken); border-radius: 2px; overflow: hidden; margin-top: 12px; }
+  .bar > i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .25s ease; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--page); padding: 11px 18px; border-radius: 999px;
+    font-size: 14px; z-index: 9; box-shadow: var(--shadow); max-width: calc(100vw - 32px);
+  }
+
+  @media (max-width: 760px) {
+    /* Two panes that each scroll do not work on a phone; go back to one page. */
+    .layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    .side { padding-bottom: 8px; overflow: visible; }
+    .main { overflow: visible; }
+    .main-head { padding: 8px 18px 0; }
+    .main-scroll { overflow: visible; padding: 0 18px 60px; }
+    .verdict { padding: 22px; }
+    .verdict h2 { font-size: 22px; }
+  }
+  @media (max-width: 560px) {
+    /* Five tabs will not fit with their words; the glyph and the count carry it. */
+    .tab-label { display: none; }
+    .tab { padding: 9px 10px; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- The wordmark: a warded keyhole, exactly as authored in
+         assets/keyward-mark.svg, scaled from its 64-unit box onto the 20-unit
+         icon grid. -->
+    <g id="i-mark"><g transform="scale(.3125)" stroke-linecap="round" fill="none" stroke="currentColor">
+      <path d="M38.10 20.52A13 13 0 0 1 38.10 43.48" stroke-width="3.4"/>
+      <path d="M25.90 20.52A13 13 0 0 0 25.90 43.48" stroke-width="3.4"/>
+      <circle cx="32" cy="27" r="6.5" fill="currentColor" stroke="none"/>
+      <path d="M29.8 30 28 41.8A1.6 1.6 0 0 0 29.6 43.6H34.4A1.6 1.6 0 0 0 36 41.8L34.2 30Z" fill="currentColor" stroke="none"/>
+    </g></g>
+    <g id="i-key"><path d="M13.5 2.5a5 5 0 0 0-4.6 7L2 16.4V19h2.6l1.2-1.2v-1.6h1.6l1.2-1.2v-1.6h1.6l1-1a5 5 0 1 0 2.3-9.4Zm2 4.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Z" fill="currentColor"/></g>
+    <g id="i-plus"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g>
+    <g id="i-scan"><circle cx="9" cy="9" r="5.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g>
+    <g id="i-check"><path d="M16.5 10a6.5 6.5 0 1 1-2-4.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M17 3.5V7h-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-import"><path d="M10 3v9m0 0 3.2-3.2M10 12 6.8 8.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 14v2.5h13V14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g>
+    <g id="i-alert"><path d="M10 3.5 18 17H2L10 3.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8.5v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14.2" r=".95" fill="currentColor"/></g>
+    <g id="i-trace"><circle cx="10" cy="10" r="5.6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="1.7" fill="currentColor"/><path d="M10 1.6v2.2M10 16.2v2.2M1.6 10h2.2M16.2 10h2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g>
+    <!-- Severity is shape-coded rather than colour-coded: it survives a
+         colour-blind reader, a greyscale print and the monochrome palette. -->
+    <g id="i-sev-certain"><circle cx="10" cy="10" r="7.6" fill="currentColor"/><path d="m6.6 10.3 2.4 2.4 4.5-4.9" fill="none" stroke="var(--surface)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-sev-high"><path d="M10 2.6 18.2 17H1.8L10 2.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 8v3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="14.1" r="1" fill="currentColor"/></g>
+    <g id="i-sev-medium"><path d="M1.8 10S4.9 4.6 10 4.6 18.2 10 18.2 10 15.1 15.4 10 15.4 1.8 10 1.8 10Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.2" fill="currentColor"/></g>
+    <g id="i-sev-low"><circle cx="10" cy="10" r="7.4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2" fill="currentColor"/></g>
+    <g id="i-steam"><path d="M10 2.4a7.6 7.6 0 0 0-7.5 6.7l3.4 1.4a2.2 2.2 0 0 1 2.4-.3l1.7-2.4v-.1a3 3 0 1 1 3 3h-.1l-2.4 1.7a2.2 2.2 0 0 1-4.3.7l-2.4-1A7.6 7.6 0 1 0 10 2.4Zm-3.6 9.9.8.3a1.6 1.6 0 1 0 .8-1.1l.9.4a1.2 1.2 0 1 1-.9 2.2l-1.6-.7Zm6.6-1.3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" fill="currentColor"/></g>
+    <g id="i-gauge"><path d="M3 14.2a7 7 0 1 1 14 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m10 14.2 3.7-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="14.2" r="1.35" fill="currentColor"/></g>
+    <g id="i-people"><circle cx="7.7" cy="7.3" r="2.9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16.5a5.2 5.2 0 0 1 10.4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.3 5a2.9 2.9 0 0 1 0 5.6M14.1 12.1a5.2 5.2 0 0 1 3.4 4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></g>
+    <g id="i-box"><path d="M10 2.6 17.2 6v8L10 17.4 2.8 14V6l7.2-3.4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M2.8 6 10 9.5 17.2 6M10 9.5v7.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></g>
+    <g id="i-more"><circle cx="4.4" cy="10" r="1.45" fill="currentColor"/><circle cx="10" cy="10" r="1.45" fill="currentColor"/><circle cx="15.6" cy="10" r="1.45" fill="currentColor"/></g>
+    <g id="i-tag"><path d="M3 3h6l8 8-6 6-8-8V3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.6" cy="6.6" r="1.15" fill="currentColor"/></g>
+  </defs>
+</svg>
+
+<div class="layout">
+  <nav class="side">
+    <div class="brand">
+      <svg width="52" height="52" viewBox="0 0 20 20" aria-hidden="true"><use href="#i-mark"/></svg>
+      <span>keyward</span>
+    </div>
+    <div id="demo-flag"></div>
+    <p class="eyebrow">Games</p>
+    <div id="games"></div>
+    <button class="game-item" data-act="add-game" style="color:var(--ink-2)">Add a game</button>
+  </nav>
+  <main class="main" id="main"></main>
+</div>
+
+<dialog id="dlg"></dialog>
+
+<script>
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+let STATE = { games: [], recipients: [], caveat: '', config: {} };
+let CURRENT = null;
+let REPORT = null;
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const icon = (n, s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const days = (iso) => Math.floor((Date.now() - Date.parse(iso)) / 86400000);
+const day = (iso) => (iso || '').slice(0, 10);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "15 Jul 2026". Built by hand so it reads the same on every machine. */
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** Recent dates read better as an interval; older ones as a date. */
+function fmtAgo(iso) {
+  if (!iso) return '';
+  const n = days(iso);
+  if (n < 0) return fmtDate(iso);
+  if (n === 0) return 'today';
+  if (n === 1) return 'yesterday';
+  if (n < 14) return `${n} days ago`;
+  if (n < 60) return `${Math.round(n / 7)} weeks ago`;
+  return fmtDate(iso);
+}
+
+/*
+  The key component. A key is the one thing here you actually need to do
+  something with — paste it into an email, look it up, record where you found
+  it — so every key on screen is the same object with the same affordances
+  instead of inert text. Clicking the code copies it; the menu carries the rest.
+*/
+function ownerOf(key) {
+  const owners = (REPORT && REPORT.keyOwners) || {};
+  return key in owners ? owners[key] : undefined;
+}
+
+function keyChip(key, opts = {}) {
+  const k = esc(key);
+  const shown = REVEALED.has(key) ? k : esc(maskKey(key));
+  const owner = 'owner' in opts ? opts.owner : ownerOf(key);
+  const line = owner === undefined
+    ? ''
+    : `<span class="keychip-owner">${owner ? esc(owner) : 'Never handed out'}</span>`;
+
+  return `<span class="keychip${opts.plain ? ' plain' : ''}" data-key="${k}">
+    <button class="keychip-copy" data-act="copy-key" data-key="${k}" title="Copy the full key">
+      ${icon('key', 14)}
+      <span class="keychip-lines">
+        <span class="keychip-code">${shown}</span>${line}
+      </span>
+    </button>
+    <button class="keychip-menu" data-act="key-menu" data-key="${k}"
+      aria-haspopup="menu" aria-expanded="false" aria-label="More for ${k}">${icon('more', 13)}</button>
+  </span>`;
+}
+
+/* ---------- the key menu ---------- */
+
+let openMenu = null;
+
+function closeMenu() {
+  if (!openMenu) return;
+  openMenu.trigger?.setAttribute('aria-expanded', 'false');
+  openMenu.node.remove();
+  openMenu = null;
+}
+
+function showKeyMenu(trigger, key) {
+  closeMenu();
+  const k = esc(key);
+  const steam = `https://partner.steamgames.com/querycdkey/cdkey?cdkey=${encodeURIComponent(key)}&method=Query`;
+
+  const node = document.createElement('div');
+  node.className = 'menu';
+  node.setAttribute('role', 'menu');
+  node.innerHTML = `
+    <p class="menu-key">${esc(REVEALED.has(key) ? key : maskKey(key))}</p>
+    <button role="menuitem" data-act="copy-key" data-key="${k}">${icon('key', 14)} Copy the full key</button>
+    <button role="menuitem" data-act="key-reveal" data-key="${k}">${icon('sev-medium', 14)} ${
+      REVEALED.has(key) ? 'Hide it again' : 'Show the full key'
+    }</button>
+    <button role="menuitem" data-act="key-record" data-key="${k}">${icon('trace', 14)} Show what we know</button>
+    <button role="menuitem" data-act="key-sighted" data-key="${k}">${icon('tag', 14)} Record where I found it</button>
+    <button role="menuitem" data-act="key-revoke" data-key="${k}">${icon('alert', 14)} Mark it revoked</button>
+    <a role="menuitem" href="${esc(steam)}" target="_blank" rel="noreferrer noopener"
+       style="display:block"><button style="pointer-events:none;width:100%">${icon('scan', 14)} Look it up in Steamworks</button></a>`;
+  document.body.append(node);
+
+  // Anchored to the trigger, flipped when it would fall off the edge.
+  const r = trigger.getBoundingClientRect();
+  const w = node.offsetWidth;
+  const h = node.offsetHeight;
+  node.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - w - 8))}px`;
+  node.style.top = r.bottom + h + 8 > window.innerHeight ? `${Math.max(8, r.top - h - 6)}px` : `${r.bottom + 6}px`;
+
+  trigger.setAttribute('aria-expanded', 'true');
+  openMenu = { node, trigger };
+}
+
+/* ---------- where a key came from, on hover ---------- */
+
+const PEEK_CACHE = new Map();
+let peekNode = null;
+let peekTimer;
+
+function hidePeek() {
+  clearTimeout(peekTimer);
+  peekNode?.remove();
+  peekNode = null;
+}
+
+function peekText(r) {
+  if (r.verdict === 'unknown') return '<b>Not one of your keys</b><span>No record of it here.</span>';
+  const status = STATUS_WORD[r.status] ?? r.status ?? 'never checked';
+  if (r.verdict === 'unassigned') {
+    return `<b>Never handed out</b><span>${esc(r.batch)} · ${esc(status)}<br>Nobody was given this one.</span>`;
+  }
+  return `<b>${esc(r.recipient)}</b><span>${esc(r.recipientKind || 'contact')} · ${esc(r.batch)}<br>` +
+    `Sent ${esc(fmtDate(r.assignedAt))} · ${esc(status)}</span>`;
+}
+
+function placePeek(anchor, html) {
+  hidePeek();
+  const node = document.createElement('div');
+  node.className = 'peek';
+  node.innerHTML = html;
+  document.body.append(node);
+  const r = anchor.getBoundingClientRect();
+  node.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - node.offsetWidth - 8))}px`;
+  node.style.top = r.bottom + node.offsetHeight + 8 > window.innerHeight
+    ? `${Math.max(8, r.top - node.offsetHeight - 6)}px`
+    : `${r.bottom + 6}px`;
+  peekNode = node;
+}
+
+async function showPeek(chip) {
+  const key = chip.dataset.key;
+  if (!key || openMenu) return;
+
+  if (PEEK_CACHE.has(key)) return placePeek(chip, peekText(PEEK_CACHE.get(key)));
+  try {
+    const r = await api('/api/trace?key=' + encodeURIComponent(key));
+    PEEK_CACHE.set(key, r);
+    // The pointer may have moved on while that was in flight.
+    if (chip.matches(':hover') || chip.contains(document.activeElement)) {
+      placePeek(chip, peekText(r));
+    }
+  } catch {
+    /* a peek that cannot load simply does not appear */
+  }
+}
+
+document.addEventListener('mouseover', (ev) => {
+  const chip = ev.target.closest?.('.keychip');
+  if (!chip) return;
+  clearTimeout(peekTimer);
+  peekTimer = setTimeout(() => void showPeek(chip), 320);
+});
+document.addEventListener('mouseout', (ev) => {
+  if (ev.target.closest?.('.keychip')) hidePeek();
+});
+window.addEventListener('scroll', hidePeek, true);
+
+async function copyKey(key, chip) {
+  await navigator.clipboard.writeText(key);
+  // Feedback on the thing that was clicked, not a toast at the far edge.
+  const target = chip?.closest('.keychip');
+  if (!target) return toast('Copied');
+  target.dataset.copied = 'true';
+  setTimeout(() => delete target.dataset.copied, 1100);
+}
+
+/**
+ * Plain words for the severity ladder, each with its own glyph. The shape does
+ * the coding rather than a colour: it survives a colour-blind reader and a
+ * greyscale screenshot, and it keeps the palette monochrome.
+ */
+/** The filter chips say "Redeemed" and "Still waiting"; the column has to agree. */
+const STATUS_WORD = {
+  activated: 'redeemed',
+  not_activated: 'not redeemed',
+  unchecked: 'never checked',
+  revoked: 'revoked',
+  invalid: 'not recognised',
+  unknown: 'unclear',
+};
+
+const SEVERITY_WORD = {
+  certain: 'Confirmed',
+  high: 'Very likely',
+  medium: 'Worth a look',
+  low: 'Background',
+};
+
+/**
+ * Keys are shown as a peek. A full key on screen leaks through a screenshot, a
+ * shared window or a recorded call, and this tool is opened precisely to talk
+ * about keys that got out. The first group is enough to tell two apart; the
+ * menu reveals the rest, and copying always copies the whole thing.
+ */
+const REVEALED = new Set();
+
+function maskKey(key) {
+  const parts = String(key).split('-');
+  if (parts.length < 2) return key;
+  return parts.map((p, i) => (i === 0 ? p : '•'.repeat(p.length))).join('-');
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'x-keyward-token': TOKEN, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Carry the server's extra fields (needsKey, field) onto the error so
+    // callers can react rather than only display a string.
+    throw Object.assign(new Error(data.error || `HTTP ${res.status}`), data, { status: res.status });
+  }
+  return data;
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.textContent = msg;
+  document.body.append(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+async function refresh() {
+  CONTACTS_CACHE = null; // anything that changed the ledger changed these too
+  STATE = await api('/api/state');
+  if (!CURRENT && STATE.games.length) CURRENT = STATE.games[0].name;
+  if (CURRENT && !STATE.games.some((g) => g.name === CURRENT)) CURRENT = STATE.games[0]?.name ?? null;
+  REPORT = CURRENT ? await api('/api/report?game=' + encodeURIComponent(CURRENT)) : null;
+  render();
+}
+
+function renderSidebar() {
+  el('games').innerHTML = STATE.games.map((g) => `
+    <button class="game-item" data-act="select" data-game="${esc(g.name)}" aria-current="${g.name === CURRENT}">
+      ${g.image ? `<img class="gameitem-art" src="${esc(g.image)}" alt="" />` : ''}
+      <b>${esc(g.name)}</b>
+      <small>${g.keys} keys, ${g.assigned} handed out</small>
+    </button>`).join('');
+}
+
+/**
+ * The verdict. One headline, one or two sentences of plain explanation, and the
+ * buttons that actually follow from it. Everything else on the screen is folded
+ * away behind a disclosure, so this is what a reader has to understand.
+ */
+function verdict(r) {
+  const assigned = r.totals.assigned ?? 0;
+  const unchecked = r.totals.uncheckedAssigned;
+  const certain = r.findings.filter((f) => f.severity === 'certain');
+  const strong = r.findings.filter((f) => f.severity === 'high');
+  // Only handed-out keys matter here: ones still sitting in the batch have
+  // nobody to have leaked them.
+  const mostlyUnchecked = assigned > 0 && unchecked > assigned / 2;
+
+  const A = {
+    trace: `<button data-act="trace" class="primary">${icon('trace')} Check a key you found</button>`,
+    check: `<button data-act="check" class="primary">${icon('check')} See which were redeemed</button>`,
+    checkQuiet: `<button data-act="check">${icon('check')} See which were redeemed</button>`,
+    scan: `<button data-act="scan">${icon('scan')} Look for it on sale</button>`,
+    assign: `<button data-act="assign" class="primary">${icon('key')} Hand out a key</button>`,
+    keys: `<button data-act="import-keys" class="primary">${icon('import')} Import keys</button>`,
+  };
+
+  if (r.totals.keys === 0) {
+    return { head: 'No keys yet', body:
+      `<p>Export a batch of keys from Steamworks and paste them in. Hand every key out from here
+       after that, so there is a record of who got which one.</p>`,
+      actions: [A.keys] };
+  }
+  if (assigned === 0) {
+    return { head: 'Nothing handed out yet', body:
+      `<p>You have <span class="fig">${r.totals.keys}</span> keys ready. Hand them out from here
+       instead of copying them out of a spreadsheet, and you will know who has each one.</p>`,
+      actions: [A.assign, `<button data-act="import-recipients">${icon('import')} Import contacts</button>`] };
+  }
+
+  if (certain.length > 0) {
+    const f = certain[0];
+    return { head: certain.length === 1 ? 'One of your keys is on sale' : `${certain.length} of your keys are on sale`,
+      body: `<p>${esc(f.summary)}</p>
+        <p>You made this key and your own records say who got it. Two things before you act on
+        that. A reseller may have bought it fairly from someone further down the chain, so this
+        tells you where it left your hands, not who made money on it. And revoking it takes the
+        game away from whoever paid for it.</p>`,
+      actions: [A.trace, A.scan] };
+  }
+
+  if (strong.length > 0) {
+    return { head: strong.length === 1 ? 'One thing looks wrong' : `${strong.length} things look wrong`,
+      body: `<p>${esc(strong[0].summary)}</p>
+        <p>Nothing is confirmed yet. Buy one copy from the resale site and check the key it gives
+        you: it will be one of yours, and your records will say who got it.</p>`,
+      actions: [A.trace, A.checkQuiet] };
+  }
+
+  if (mostlyUnchecked) {
+    return { head: 'Not enough checked to say', body:
+      `<p>You have never checked <span class="fig">${unchecked}</span> of the
+       <span class="fig">${assigned}</span> keys you handed out, so there is nothing to report yet.
+       Checking them takes a couple of minutes and you only need to do it now and then.</p>`,
+      actions: [A.check] };
+  }
+  if (!r.lastScan) {
+    return { head: 'Nothing wrong so far', body:
+      `<p>Everyone you sent a key to over ${r.thresholds.dormantDays} days ago has redeemed it.
+       You have not looked for the game on resale sites yet, which is the other half of the
+       picture.</p>`,
+      actions: [A.scan] };
+  }
+
+  return { head: 'Nothing needs attention', body:
+    `<p>Everyone you sent a key to over ${r.thresholds.dormantDays} days ago has redeemed it, and
+     no resale site was selling the game the last time you looked.</p>`,
+    actions: [A.assign] };
+}
+
+/*
+  Tabs are a map of what exists. Each one owns the actions that belong to it,
+  which is what replaced the row of six buttons that meant nothing out of
+  context.
+*/
+const TABS = [
+  { id: 'overview', label: 'Overview', icon: 'gauge' },
+  { id: 'keys', label: 'Keys', icon: 'key' },
+  { id: 'contacts', label: 'Contacts', icon: 'people' },
+  { id: 'batches', label: 'Batches', icon: 'box' },
+  { id: 'sale', label: 'On sale', icon: 'tag' },
+];
+let TAB = TABS.some((t) => t.id === location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+let KEY_FILTER = 'all';
+let KEY_QUERY = '';
+
+/*
+  Three tables, two sorting strategies, and the difference is not arbitrary.
+
+  Keys is paginated, so it sorts on the server: sorting the slice the browser
+  happens to hold would reorder a fraction of the data and present it as the
+  whole answer. Contacts and Batches always arrive complete, so they sort in
+  the page — no round trip, and nothing to misrepresent.
+*/
+const KEYS_SORT = { sort: 'sent', desc: true };
+const CONTACTS_SORT = { sort: 'waiting', desc: true };
+const BATCHES_SORT = { sort: 'rate', desc: true };
+let CONTACT_QUERY = '';
+let CONTACTS_CACHE = null;
+
+/** A sortable column header, showing which way it is currently pointing. */
+function sortHead(act, state, id, label, extra = '') {
+  const on = state.sort === id;
+  return `<th class="sortable${extra ? ' ' + extra : ''}" data-act="${act}" data-sort="${id}"
+    ${on ? `aria-sort="${state.desc ? 'descending' : 'ascending'}"` : ''}
+    >${label}${on ? `<span class="arrow">${state.desc ? '↓' : '↑'}</span>` : ''}</th>`;
+}
+
+/** Same column flips direction; a new column starts at the interesting end. */
+function applySort(state, next) {
+  state.desc = state.sort === next ? !state.desc : true;
+  state.sort = next;
+}
+
+function sortRows(rows, state, accessors = {}) {
+  const get = accessors[state.sort] || ((r) => r[state.sort]);
+  return [...rows].sort((a, b) => {
+    const x = get(a);
+    const y = get(b);
+    if (x === y) return 0;
+    if (x === null || x === undefined) return 1;
+    if (y === null || y === undefined) return -1;
+    const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+    return state.desc ? -c : c;
+  });
+}
+
+/** Narrow the table to the value in a cell, without retyping it. */
+function drill(value, label) {
+  if (!value) return label ?? '';
+  return `<button class="drill" data-act="drill" data-q="${esc(value)}"
+    title="Show only this">${esc(label ?? value)}</button>`;
+}
+
+function activeFilters() {
+  const chips = [];
+  if (KEY_QUERY) {
+    chips.push(`<button class="fchip" data-act="clear-q">${esc(KEY_QUERY)} <span class="x">×</span></button>`);
+  }
+  if (KEY_FILTER !== 'all') {
+    const label = (KEY_FILTERS.find(([id]) => id === KEY_FILTER) || [, KEY_FILTER])[1];
+    chips.push(`<button class="fchip" data-act="clear-filter">${esc(label)} <span class="x">×</span></button>`);
+  }
+  if (chips.length === 0) return '';
+  return `<div class="activefilters"><span class="label">Showing only</span>${chips.join('')}</div>`;
+}
+
+const KEY_FILTERS = [
+  ['all', 'All'],
+  ['redeemed', 'Redeemed'],
+  ['waiting', 'Still waiting'],
+  ['unchecked', 'Never checked'],
+  ['unassigned', 'Not handed out'],
+];
+
+function tabCount(id, r) {
+  if (id === 'overview') return r.findings.length || '';
+  if (id === 'keys') return r.totals.keys;
+  if (id === 'batches') return r.batches.length;
+  if (id === 'sale') return r.lastScan ? r.keyshopListings.length : '';
+  return '';
+}
+
+function renderMain() {
+  if (!CURRENT) {
+    el('main').innerHTML = `
+      <div class="verdict">
+        <h2>Nothing tracked yet</h2>
+        <p>Add the game you are sending keys for. keyward then keeps a record of which key went to
+          which person, so that when one turns up for sale you can say whose it was.</p>
+        <div class="row"><button class="primary" data-act="add-game">${icon('plus')} Add a game</button></div>
+      </div>`;
+    return;
+  }
+
+  const r = REPORT;
+
+  const g = STATE.games.find((x) => x.name === CURRENT) || {};
+  const steamMark = r.icons && r.icons['Steam']
+    ? `<img src="${esc(r.icons['Steam'])}" alt="" width="16" height="16" />`
+    : icon('steam', 16);
+
+  el('main').innerHTML = `
+    <div class="main-head">
+      <div class="gamehead">
+        ${g.image ? `<img class="gameart" src="${esc(g.image)}" alt="" />` : ''}
+        <div class="namerow">
+          <h1 class="title">${esc(r.game)}</h1>
+          ${g.storeUrl
+            ? `<a class="storelink" href="${esc(g.storeUrl)}" target="_blank" rel="noreferrer noopener"
+                 title="Open the Steam store page" aria-label="Steam store page">${steamMark}</a>`
+            : ''}
+        </div>
+      </div>
+      <div class="tabs" role="tablist">
+        ${TABS.map((t) => {
+          const n = tabCount(t.id, r);
+          return `<button class="tab" role="tab" data-act="tab" data-tab="${t.id}"
+            aria-selected="${t.id === TAB}">${icon(t.icon, 16)}<span class="tab-label">${t.label}</span>${
+              n !== '' ? `<span class="count">${n}</span>` : ''
+            }</button>`;
+        }).join('')}
+        <span class="spacer"></span>
+        <button data-act="import-keys">${icon('import')} Add keys</button>
+        <button data-act="handout">${icon('people')} Hand out to a list</button>
+        <button data-act="assign" class="primary">${icon('key')} Hand out a key</button>
+      </div>
+    </div>
+    <div class="main-scroll">
+      <div id="progress"></div>
+      <div id="view"></div>
+    </div>`;
+
+  renderView();
+}
+
+async function renderView() {
+  const r = REPORT;
+  const view = el('view');
+  if (!view) return;
+
+  if (TAB === 'overview') {
+    view.innerHTML = viewOverview(r);
+    // Marked as seen because you are looking at them now. Doing it on any page
+    // load would make "since you last looked" quietly meaningless.
+    if (r.unseen > 0) {
+      void api('/api/seen', { method: 'POST', body: JSON.stringify({ game: CURRENT }) })
+        .then(() => { r.unseen = 0; })
+        .catch(() => {});
+    }
+    return;
+  }
+  if (TAB === 'batches') return void (view.innerHTML = viewBatches(r));
+  if (TAB === 'sale') return void (view.innerHTML = viewSale(r));
+
+  view.innerHTML = `<div class="card"><p class="empty">Loading…</p></div>`;
+  try {
+    if (TAB === 'keys') {
+      const data = await api(`/api/keys?game=${encodeURIComponent(CURRENT)}` +
+        `&filter=${KEY_FILTER}&q=${encodeURIComponent(KEY_QUERY)}` +
+        `&sort=${KEYS_SORT.sort}&dir=${KEYS_SORT.desc ? 'desc' : 'asc'}`);
+      view.innerHTML = viewKeys(data);
+      const box = el('key-search');
+      if (box) { box.value = KEY_QUERY; if (KEY_QUERY) box.focus(); }
+    } else if (TAB === 'contacts') {
+      // Cached: contacts arrive complete, so sorting and searching them is a
+      // local operation and should not cost a round trip per keystroke.
+      if (!CONTACTS_CACHE) CONTACTS_CACHE = await api(`/api/contacts?game=${encodeURIComponent(CURRENT)}`);
+      view.innerHTML = viewContacts(CONTACTS_CACHE);
+      const box = el('contact-search');
+      if (box) { box.value = CONTACT_QUERY; if (CONTACT_QUERY) box.focus(); }
+    }
+  } catch (e) {
+    view.innerHTML = `<div class="card"><p class="empty">${esc(e.message)}</p></div>`;
+  }
+}
+
+function viewOverview(r) {
+  const v = verdict(r);
+  const findings = r.findings.length === 0 ? '' : `<div class="card">
+    <h3>Everything we noticed</h3>
+    <p class="lede">Only <b>Confirmed</b> rests on something you saw. The rest are patterns with
+      ordinary explanations, and each one names its own.</p>
+    ${r.findings.map(renderFinding).join('')}
+    <p class="note">Run <code>keyward rules</code> in a terminal to see the thresholds and change
+      them. Set them so they catch the odd case and stay quiet the rest of the time.</p>
+  </div>`;
+
+  const since = r.unseen > 0
+    ? `<p class="since">${r.unseen} ${r.unseen === 1 ? 'thing has' : 'things have'} come up since you
+       last looked at this game.</p>`
+    : '';
+
+  return `${since}<div class="verdict">
+      <h2>${esc(v.head)}</h2>
+      ${v.body}
+      <div class="row">${v.actions.join('')}</div>
+    </div>${findings}`;
+}
+
+function renderFinding(f) {
+  // The overflow is a way through to the full list rather than a dead "+3 more".
+  const rest = f.keys.length - 5;
+  const more = rest > 0
+    ? `<button class="k" data-act="see-keys" data-q="${esc(f.subjectKind === 'studio' ? '' : f.subject)}"
+        data-filter="${f.subjectKind === 'studio' ? 'unassigned' : 'all'}">+${rest} more</button>`
+    : '';
+
+  return `<div class="finding" data-sev="${esc(f.severity)}">
+    <span class="sev">${icon('sev-' + f.severity, 15)}${esc(SEVERITY_WORD[f.severity] || f.severity)}</span>
+    <b>${esc(f.summary)}</b>
+    <p>${esc(f.why)}</p>
+    ${f.keys.length ? `<div class="keys">
+      ${f.keys.slice(0, 5).map((k) => keyChip(k)).join('')}${more}
+    </div>` : ''}
+  </div>`;
+}
+
+function viewKeys(data) {
+  // No separate recipient column: the chip carries the holder now, and
+  // repeating it beside itself is noise.
+  const rows = data.rows.map((k) => `<tr>
+      <td>${keyChip(k.key, { plain: true, owner: k.recipient })}
+        ${k.sighted ? '<span class="sub">found on sale</span>' : ''}</td>
+      <td>${drill(k.batch)}${k.campaign ? `<span class="sub">${esc(k.campaign)}</span>` : ''}</td>
+      <td class="when">${esc(fmtDate(k.assigned_at))}</td>
+      <td>${esc(STATUS_WORD[k.status] ?? k.status)}</td>
+    </tr>`).join('');
+
+  return `<div class="card">
+    <div class="toolbar">
+      ${KEY_FILTERS.map(([id, label]) =>
+        `<button class="chip" data-act="filter" data-filter="${id}" aria-pressed="${KEY_FILTER === id}">${label}</button>`).join('')}
+      <span class="grow"><input id="key-search" placeholder="Search a key, a person or a batch" /></span>
+    </div>
+    <div class="toolbar">
+      <button data-act="trace">${icon('trace')} Check a key you found</button>
+      <button data-act="check">${icon('check')} See which were redeemed</button>
+      <button data-act="import-keys" class="quiet">${icon('import')} Import keys</button>
+      <a class="exportlink" href="/api/export?game=${encodeURIComponent(CURRENT)}&t=${encodeURIComponent(TOKEN)}"
+         download>${icon('import')} Export CSV</a>
+    </div>
+    ${activeFilters()}
+    ${data.rows.length === 0
+      ? `<p class="empty">Nothing matches. <b data-act="clear-all" style="cursor:pointer;text-decoration:underline">Clear the filters</b> to see everything.</p>`
+      : `<table><thead><tr>
+          ${sortHead('sort-keys', KEYS_SORT, 'key', 'Key and holder')}
+          ${sortHead('sort-keys', KEYS_SORT, 'batch', 'Batch')}
+          ${sortHead('sort-keys', KEYS_SORT, 'sent', 'Sent on', 'when')}
+          ${sortHead('sort-keys', KEYS_SORT, 'status', 'Status')}
+        </tr></thead><tbody>${rows}</tbody></table>
+        <p class="note">${data.shown < data.total
+          ? `Showing the first ${data.shown} of ${data.total}. Narrow it with a filter or the search box.`
+          : `All ${data.total} shown. Click a batch or a name to narrow to it; click a column to sort.`}</p>`}
+  </div>`;
+}
+
+function viewContacts(all) {
+  const q = CONTACT_QUERY.trim().toLowerCase();
+  const matching = q
+    ? all.filter((c) => `${c.name} ${c.kind} ${c.handle ?? ''}`.toLowerCase().includes(q))
+    : all;
+  const contacts = sortRows(matching, CONTACTS_SORT, {
+    last_sent: (c) => (c.last_sent ? Date.parse(c.last_sent) : null),
+  });
+
+  return `<div class="card">
+    <div class="toolbar">
+      <span class="grow"><input id="contact-search" placeholder="Search a name, a handle or a kind" /></span>
+      <button data-act="assign">${icon('key')} Hand out a key</button>
+      <button data-act="handout" class="primary">${icon('people')} Hand out to a list</button>
+      <button data-act="remind" class="quiet">${icon('alert')} Who to chase</button>
+      <button data-act="import-recipients" class="quiet">${icon('import')} Import contacts</button>
+    </div>
+    ${CONTACT_QUERY
+      ? `<div class="activefilters"><span class="label">Showing only</span>
+          <button class="fchip" data-act="clear-contact-q">${esc(CONTACT_QUERY)} <span class="x">×</span></button></div>`
+      : ''}
+    ${all.length === 0
+      ? `<p class="empty">Nobody has been given a key for this game yet.</p>`
+      : contacts.length === 0
+      ? `<p class="empty">Nobody matches.</p>`
+      : `<p class="lede">Everyone you have sent a key to for this game. Someone holding several
+          keys and redeeming none is worth a question before you send another. Click a name to see
+          their keys.</p>
+        <table><thead><tr>
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'name', 'Name')}
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'kind', 'Kind')}
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'keys', 'Keys', 'num')}
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'redeemed', 'Redeemed', 'num')}
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'waiting', 'Waiting', 'num')}
+          ${sortHead('sort-contacts', CONTACTS_SORT, 'last_sent', 'Last sent', 'when')}
+          <th></th>
+        </tr></thead><tbody>
+          ${contacts.map((c) => `<tr>
+            <td>${drill(c.name)}${c.handle ? `<span class="sub">${esc(c.handle)}</span>` : ''}</td>
+            <td><button class="drill" data-act="rename-contact" data-name="${esc(c.name)}"
+                title="Rename or merge">Rename</button></td>
+            <td>${esc(c.kind)}</td>
+            <td class="num">${c.keys}</td>
+            <td class="num">${c.redeemed}</td>
+            <td class="num"${c.waiting > 0 && c.redeemed === 0 ? ' style="font-weight:600"' : ''}>${c.waiting}</td>
+            <td class="when">${esc(fmtDate(c.last_sent))}</td>
+          </tr>`).join('')}
+        </tbody></table>
+        <p class="note">${contacts.length} of ${all.length} shown. Click a column to sort.</p>`}
+  </div>`;
+}
+
+function viewBatches(r) {
+  if (r.batches.length === 0) {
+    return `<div class="card"><p class="empty">No batches yet. Import a set of keys, or set up the
+      channels you plan to send to and fill them later.</p>
+      <div class="toolbar" style="margin:14px 0 0">
+        <button data-act="import-keys" class="primary">${icon('import')} Import keys</button>
+        <button data-act="new-batch">${icon('plus')} New batch</button>
+      </div></div>`;
+  }
+  return `<div class="card">
+    <div class="toolbar">
+      <button data-act="import-keys" class="primary">${icon('import')} Import keys</button>
+      <button data-act="new-batch">${icon('plus')} New batch</button>
+    </div>
+    <p class="lede">A batch is one set of keys, named when you import them. Keep one batch per
+      channel (press, creators, each distributor) and you will be able to tell which one a leak
+      came from, because keys leak from one channel at a time.</p>
+    <table><thead><tr>
+      ${sortHead('sort-batches', BATCHES_SORT, 'batch', 'Batch')}
+      <th>Region</th>
+      ${sortHead('sort-batches', BATCHES_SORT, 'created_at', 'Created', 'when')}
+      ${sortHead('sort-batches', BATCHES_SORT, 'remaining', 'Left', 'num')}
+      ${sortHead('sort-batches', BATCHES_SORT, 'assigned', 'Handed out', 'num')}
+      ${sortHead('sort-batches', BATCHES_SORT, 'dormant', 'Waiting', 'num')}
+      ${sortHead('sort-batches', BATCHES_SORT, 'rate', 'Share waiting', 'num')}
+      <th></th>
+    </tr></thead><tbody>
+      ${sortRows(r.batches, BATCHES_SORT, {
+        created_at: (b) => Date.parse(b.created_at),
+        rate: (b) => (b.assigned > 0 ? b.dormant / b.assigned : 0),
+      }).map((b) => {
+        const rate = b.assigned > 0 ? Math.round((b.dormant / b.assigned) * 100) : 0;
+        return `<tr>
+          <td>${drill(b.batch)}${b.note ? `<span class="sub">${esc(b.note)}</span>` : ''}</td>
+          <td>${b.region ? `<span class="tag">${esc(b.region)}</span>` : '<span class="sub">—</span>'}</td>
+          <td class="when">${esc(fmtDate(b.created_at))}</td>
+          <td class="num">${b.remaining}</td>
+          <td class="num">${b.assigned}</td>
+          <td class="num">${b.dormant}</td>
+          <td class="num"${rate > 25 ? ' style="font-weight:600"' : ''}>${rate}%</td>
+          <td><button class="drill" data-act="rename-batch" data-batch="${esc(b.batch)}"
+              title="Rename or merge">Rename</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>
+    ${(() => {
+      // Stock you are sitting on. These are the keys that come back redeemed
+      // without anyone having been given them, because a leak from your own side
+      // needs no contact to leak it.
+      const idle = r.batches.filter((b) => b.remaining > 0);
+      const total = idle.reduce((n, b) => n + b.remaining, 0);
+      const oldest = idle.reduce((d, b) => Math.max(d, Math.floor(
+        (Date.now() - Date.parse(b.created_at)) / 86400000)), 0);
+      return total === 0 ? '' : `<p class="note"><b>${total} keys generated and never handed out</b>,
+        the oldest ${oldest} days ago. Nothing is wrong with holding stock, but these are the ones
+        that turn up redeemed with no contact attached to them.</p>`;
+    })()}
+    <p class="note">To put a name to the worst batch, buy one copy from the resale site and run
+      <b>Check a key you found</b> on the key it gives you.</p>
+  </div>`;
+}
+
+/**
+ * The shop's real logo when the server has one cached, its initial otherwise.
+ * The data URI comes from the database — this page never requests an image, so
+ * a resale site learns nothing from it being rendered.
+ */
+function shopMark(name, icons) {
+  const src = icons && icons[name];
+  if (src) return `<img class="shopmark" src="${esc(src)}" alt="" width="26" height="26" />`;
+  const initial = (String(name).trim()[0] || '?').toUpperCase();
+  return `<span class="shopmark" aria-hidden="true">${esc(initial)}</span>`;
+}
+
+function viewSale(r) {
+  const body = !r.lastScan
+    ? `<p class="empty">You have not looked yet. This asks IsThereAnyDeal which shops are selling the
+        game, resale sites included.</p>`
+    : r.keyshopListings.length === 0
+    ? `<p class="empty">No resale site is selling this game, as far as IsThereAnyDeal can see.</p>`
+    : `<p class="lede">Resale sites selling this game, cheapest first. A price far under yours usually
+        means the shop bought its stock cheap in another region. It is also where a leaked key of
+        yours would end up.</p>
+      <table><thead><tr><th>Shop</th><th class="num">Price</th><th></th></tr></thead><tbody>
+        ${r.keyshopListings.map((l) => `<tr>
+          <td>${shopMark(l.shop_name, r.icons)}${esc(l.shop_name)}</td>
+          <td class="num">${l.price.toFixed(2)} ${esc(l.currency)}</td>
+          <td>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noreferrer noopener">Open</a>` : ''}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+
+  return `<div class="card">
+    <div class="toolbar">
+      <button data-act="scan" class="primary">${icon('scan')} Look for it on sale</button>
+      <button data-act="trace">${icon('trace')} Check a key you found</button>
+    </div>
+    ${body}
+    ${r.lastScan ? `<p class="note" style="margin-top:14px">Last checked ${esc(fmtAgo(r.lastScan))}.</p>` : ''}
+    <!-- Attribution is a condition of using their API, not a courtesy. -->
+    <p class="note">Prices come from the
+      <a href="https://isthereanydeal.com" target="_blank" rel="noreferrer noopener">IsThereAnyDeal</a>
+      API. keyward never talks to a resale site itself.</p>
+  </div>`;
+}
+
+function render() {
+  el('demo-flag').innerHTML = STATE.demo
+    ? '<p class="eyebrow" style="margin:0">Demo data</p>'
+    : '';
+  renderSidebar();
+  renderMain();
+}
+
+/* ---------- dialogs ---------- */
+
+function openDialog(html) {
+  hidePeek();
+  closeMenu();
+  STAGED_FILE = null; // a file chosen for a dialog you closed is not still chosen
+  el('dlg').innerHTML = html;
+  el('dlg').showModal();
+  el('dlg').querySelector('input, textarea')?.focus();
+}
+const closeDialog = () => el('dlg').close();
+
+function field(label, inner) { return `<div class="field"><label>${label}</label>${inner}</div>`; }
+function footer(submitLabel) {
+  return `<p id="dlg-error" class="err" hidden></p>
+          <div class="actions"><button type="button" data-act="cancel">Cancel</button>
+          <button class="primary" data-act="submit">${submitLabel}</button></div>`;
+}
+const done = '<div class="actions"><button class="primary" data-act="cancel">Done</button></div>';
+
+/**
+ * Failures inside a dialog belong in the dialog. A toast disappears, does not
+ * say which field was wrong, and leaves a form sitting there looking accepted.
+ */
+function dialogError(message) {
+  const box = el('dlg-error');
+  if (!box) return false;
+  box.textContent = message;
+  box.hidden = false;
+  return true;
+}
+
+const DIALOGS = {
+  'add-game': () => openDialog(`<h3>Add a game</h3>
+    <p class="lede">With the Steam appid, keyward can find the game on resale sites, link to its
+      store page and pull its artwork. You can add it later.</p>
+    ${field('Name', '<input id="f-name" placeholder="Lanternfall" />')}
+    ${field('Steam appid <span style="opacity:.7">(the number in its store URL)</span>', '<input id="f-appid" class="key-input" inputmode="numeric" placeholder="2417830" />')}
+    ${field('Artwork <span style="opacity:.7">(optional, taken from Steam if you leave it blank)</span>', '<input id="f-image" placeholder="https://…/cover.jpg" />')}
+    ${footer('Add game')}`),
+
+  'import-keys': () => {
+    const existing = (REPORT?.batches ?? []).map((b) => b.batch);
+    openDialog(`<h3>Import keys</h3>
+      <p class="lede">Paste the text file Steamworks gave you, a CSV of your own, or keys copied
+        out of an email. keyward looks for the shape AAAAA-BBBBB-CCCCC anywhere in what you paste,
+        so headers, extra columns, bullets and stray prose all do no harm.</p>
+
+      <details class="guide">
+        <summary>Where do I get these?</summary>
+        <ol>
+          <li>Open your game in <a href="https://partner.steamgames.com" target="_blank" rel="noreferrer noopener">Steamworks</a> and click <b>Request Steam Product Keys</b>.</li>
+          <li>Ask for the number you need, if you have not already. Valve reviews anything over
+            5,000 by hand, and turns down requests that look like a store built on keys.</li>
+          <li>Download the batch. You get a zip with a plain text file inside.</li>
+          <li>Unzip it, open the text file, and paste the whole thing here.</li>
+        </ol>
+        <p class="hint">Only the person who made the request can download those keys. If a
+          colleague asked for them, the download has to come from their account.</p>
+      </details>
+      ${field(
+        'Batch name',
+        `<input id="f-batch" list="bl" placeholder="press-preview" autocomplete="off" />
+         <datalist id="bl">${existing.map((b) => `<option value="${esc(b)}"></option>`).join('')}</datalist>
+         <p class="hint">A new name creates the batch${
+           existing.length ? `; an existing one adds to it. So far: ${existing.map(esc).join(', ')}.` : '.'
+         } Keep one batch per channel (press, creators, each distributor), so that when keys start
+           leaking you can tell which channel they came from.</p>`,
+      )}
+      <label class="drop" id="f-drop">
+        ${icon('import', 22)}
+        <span class="grow"><b id="f-fname">Choose a file, or drop one here</b>
+        <span>The zip straight from Steamworks, a .txt or a .csv</span></span>
+        <input type="file" id="f-file" accept=".zip,.txt,.csv,.tsv,text/plain,text/csv,application/zip" />
+      </label>
+      <p class="or">or</p>
+      ${field('Paste them', `<textarea id="f-text" placeholder="AAAAA-BBBBB-CCCCC&#10;DDDDD-EEEEE-FFFFF"></textarea>
+         <p class="hint">Duplicates are ignored, so importing the same file twice is safe.</p>`)}
+      ${footer('Import keys')}`);
+  },
+
+  'import-recipients': () => openDialog(`<h3>Import contacts</h3>
+    <p class="lede">A CSV with a <code>name</code> column. <code>email</code>, <code>kind</code> and
+      <code>handle</code> are optional extras.</p>
+    ${field('CSV', '<textarea id="f-text" placeholder="name,email,kind,handle&#10;Pixel Ledger,hi@example.com,press,pixelledger.example"></textarea>')}
+    ${footer('Import contacts')}`),
+
+  'steam-setup': () => openDialog(`<h3>Connect Steamworks</h3>
+    <p class="lede">Checking which keys were redeemed uses your own Steamworks session. Valve
+      publishes no API for it, so keyward drives the same page you would click, one key at a time.</p>
+    <ol>
+      <li>Sign in at <a href="https://partner.steamgames.com" target="_blank" rel="noreferrer noopener">partner.steamgames.com</a>.</li>
+      <li>Open your browser's developer tools, go to <b>Network</b>, and click any Steamworks link.</li>
+      <li>On that request, copy the whole <b>Cookie</b> header. It has to contain
+        <code>sessionid</code> and <code>steamLoginSecure</code>.</li>
+    </ol>
+    ${field('Cookie header', '<textarea id="f-cookie" placeholder="sessionid=…; steamLoginSecure=…"></textarea>')}
+    <p class="hint">It goes into your operating system keychain, never into the database or a
+      config file. It can act as your studio, so treat it like the password it is.</p>
+    ${footer('Connect')}`),
+
+  'itad-setup': () => openDialog(`<h3>Connect IsThereAnyDeal</h3>
+    <p class="lede">Looking for your game on resale sites needs a free API key. It takes about a
+      minute.</p>
+    <ol>
+      <li>Create an account at <a href="https://isthereanydeal.com" target="_blank" rel="noreferrer noopener">isthereanydeal.com</a> and verify the email — that is what grants 1000 requests per 5 minutes.</li>
+      <li>Register an app at <a href="https://isthereanydeal.com/apps/my/" target="_blank" rel="noreferrer noopener">isthereanydeal.com/apps/my</a>. Keys are generated for you.</li>
+      <li>Paste the <b>API key</b> below. keyward does not use the OAuth credentials.</li>
+    </ol>
+    ${field('API key', '<input id="f-itad" class="key-input" placeholder="Paste it here" />')}
+    ${field('Country <span style="opacity:.7">(two letters, sets which prices you see)</span>', '<input id="f-country" class="key-input" placeholder="ES" maxlength="2" />')}
+    ${footer('Connect')}`),
+
+  trace: () => openDialog(`<h3>Check a key you found</h3>
+    <p class="lede">If you bought a copy from a resale site, paste the key it gave you. You
+      made that key yourself, so your own records will say who you sent it to.</p>
+    ${field('Key', '<input id="f-key" class="key-input" placeholder="AAAAA-BBBBB-CCCCC" />')}
+    ${field('Where you found it <span style="opacity:.7">(optional, and worth filling in)</span>', '<input id="f-shop" placeholder="Instant Gaming" />')}
+    ${footer('Check key')}`),
+
+  'key-revoke': () => openDialog(`<h3>Mark this key revoked</h3>
+    <p class="lede">keyward cannot revoke anything: Valve gives no API for it and you do it on
+      their site. This records that you did, so the key stops showing up as an open question.</p>
+    ${field('Why <span style="opacity:.7">(optional, and worth writing down)</span>', '<input id="f-why" placeholder="Found on Instant Gaming, sent to Halcyon" />')}
+    <p class="hint">Revoking takes the game away from whoever bought it, who is also a customer.
+      Most of the time a conversation with whoever holds the contract works better.</p>
+    ${footer('Record it')}`),
+
+  'key-sighted': () => openDialog(`<h3>Record where you found it</h3>
+    <p class="lede">Write down where you found it and the rules can use it later. Otherwise the
+      lookup only lives in your head.</p>
+    ${field('Which shop', '<input id="f-shop" placeholder="Instant Gaming" />')}
+    ${field('Country <span style="opacity:.7">(optional, two letters)</span>',
+      `<input id="f-country" class="key-input" placeholder="ES" maxlength="2" />
+       <p class="hint">Only matters if the key came from a region-locked batch, and then it matters
+         a lot.</p>`)}
+    ${footer('Record it')}`),
+
+  assign: () => {
+    const stock = (REPORT?.batches ?? []).filter((b) => b.remaining > 0);
+    return openDialog(`<h3>Hand out a key</h3>
+      <p class="lede">Takes an unused key and writes down who got it. Without that, nobody can tell
+        you later whose key turned up for sale.</p>
+      ${field('Who is it for', `<input id="f-recipient" list="rl" placeholder="Pixel Ledger" />
+        <datalist id="rl">${STATE.recipients.map((r) => `<option value="${esc(r.name)}"></option>`).join('')}</datalist>`)}
+      ${stock.length > 1
+        ? field('Which batch to take it from', `<select id="f-batch-pick">${stock.map((b) =>
+            `<option value="${esc(b.batch)}">${esc(b.batch)} — ${b.remaining} left</option>`).join('')}</select>
+          <p class="hint">Press keys from the press batch, a distributor's from theirs. Mixing them
+            is what stops keyward telling you which channel a leak came from.</p>`)
+        : `<input type="hidden" id="f-batch-pick" value="${esc(stock[0]?.batch ?? '')}" />`}
+      ${field('Campaign <span style="opacity:.7">(optional)</span>',
+        `<input id="f-campaign" placeholder="launch" />
+         <p class="hint">A label for this round of sending, so you can tell a launch push apart
+           from a festival submission later.</p>`)}
+      ${footer('Hand it out')}`);
+  },
+
+  remind: async () => {
+    const r = await api('/api/remind?game=' + encodeURIComponent(CURRENT));
+    if (r.people.length === 0) {
+      return openDialog(`<h3>Nobody to chase</h3>
+        <p class="lede">Nobody is sitting on a key that you checked and that came back unredeemed.
+          Keys you have never checked are left out of this on purpose.</p>
+        ${done}`);
+    }
+    openDialog(`<h3>${r.people.length} worth a follow-up</h3>
+      <p class="lede">Each of these was given keys that you checked, and Steam says they were never
+        redeemed. Most of the time that is a dead address or an inbox nobody reads, which you want
+        to know before you send them a fourth.</p>
+      <table class="mini"><thead><tr><th>Who</th><th class="num">Waiting</th>
+        <th class="num">Oldest</th><th>Write to</th></tr></thead><tbody>
+        ${r.people.map((p) => `<tr>
+          <td>${esc(p.name)}<span class="sub">${esc(p.batches ?? '')}</span></td>
+          <td class="num">${p.waiting}</td>
+          <td class="num">${p.oldestDays}d</td>
+          <td>${p.email
+            ? `<a class="storelink" href="mailto:${esc(p.email)}?subject=${encodeURIComponent(
+                'About the ' + CURRENT + ' key')}">${esc(p.email)}</a>`
+            : `<span class="sub">${esc(p.handle ?? 'no contact on file')}</span>`}</td>
+        </tr>`).join('')}
+      </tbody></table>
+      <p class="hint">Checked keys only. Chasing someone over a key you never looked up is how a
+        studio accuses a journalist who redeemed it on day one.</p>
+      ${done}`);
+  },
+
+  handout: () => {
+    const stock = (REPORT?.batches ?? []).filter((b) => b.remaining > 0);
+    return openDialog(`<h3>Hand out to a list</h3>
+      <p class="lede">One key per person, in one go. Paste the list you were going to mail anyway and
+        you get back a CSV with a key against each name, ready for a mail merge. The record of who
+        got what is written as a side effect, which is the only way it ever stays up to date.</p>
+      ${field('The list', `<textarea id="f-text" placeholder="name,email,kind&#10;Pixel Ledger,hi@example.com,press&#10;Mara Vex,mara@example.com,creator"></textarea>
+        <p class="hint">A <code>name</code> column is all it needs. <code>email</code>,
+          <code>kind</code> and <code>handle</code> are used if they are there.</p>`)}
+      ${stock.length > 1
+        ? field('Which batch to take from', `<select id="f-batch-pick">${stock.map((b) =>
+            `<option value="${esc(b.batch)}">${esc(b.batch)} — ${b.remaining} left</option>`).join('')}</select>`)
+        : `<input type="hidden" id="f-batch-pick" value="${esc(stock[0]?.batch ?? '')}" />`}
+      ${field('Campaign <span style="opacity:.7">(optional)</span>',
+        '<input id="f-campaign" placeholder="launch" />')}
+      ${footer('Hand them out')}`);
+  },
+
+  'new-batch': () => openDialog(`<h3>New batch</h3>
+    <p class="lede">One batch per channel: press, creators, each distributor. You can set them up
+      now and import the keys into them later.</p>
+    ${field('Name', '<input id="f-batch-name" placeholder="distributor-halcyon" />')}
+    ${field('Note <span style="opacity:.7">(optional)</span>', '<input id="f-batch-note" placeholder="Retail bundle, signed 3 July" />')}
+    ${field('Region lock <span style="opacity:.7">(optional, two letters)</span>',
+      `<input id="f-batch-region" class="key-input" placeholder="MX" maxlength="2" />
+       <p class="hint">If you asked Valve to region-lock this package, put the country here. A key
+         from it found on sale somewhere else is then something you can see, not something you
+         suspect.</p>`)}
+    ${footer('Create batch')}`),
+
+  'rename-contact': () => openDialog(`<h3>Rename ${esc(el('dlg').dataset.name ?? '')}</h3>
+    <p class="lede">Give them the name of another contact and the two merge, keys and all. That is
+      how you fix the same person entered twice.</p>
+    ${field('New name', `<input id="f-contact-to" value="${esc(el('dlg').dataset.name ?? '')}" />`)}
+    ${footer('Rename')}`),
+
+  'rename-batch': () => openDialog(`<h3>Rename ${esc(el('dlg').dataset.batch ?? '')}</h3>
+    <p class="lede">Give it the name of another batch and the two merge. That is how you fix a
+      typo that split one channel into two.</p>
+    ${field('New name', `<input id="f-batch-to" list="bl2" value="${esc(el('dlg').dataset.batch ?? '')}" />
+      <datalist id="bl2">${(REPORT?.batches ?? []).map((b) => `<option value="${esc(b.batch)}"></option>`).join('')}</datalist>`)}
+    ${footer('Rename')}`),
+};
+
+const SUBMIT = {
+  'add-game': async () => {
+    const r = await api('/api/game', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: el('f-name').value,
+        appid: el('f-appid').value,
+        imageUrl: el('f-image').value,
+      }),
+    });
+    CURRENT = el('f-name').value.trim();
+    closeDialog(); await refresh();
+    toast(r.art ? 'Game added, with its artwork' : 'Game added');
+  },
+  'import-keys': async () => {
+    const payload = { game: CURRENT, batch: el('f-batch').value };
+    if (STAGED_FILE) payload.fileB64 = STAGED_FILE.b64;
+    else payload.text = el('f-text').value;
+
+    const r = await api('/api/import/keys', { method: 'POST', body: JSON.stringify(payload) });
+    STAGED_FILE = null;
+    closeDialog(); await refresh();
+    toast(r.elsewhere?.length
+      ? `Imported ${r.added}. Some already belong to ${r.elsewhere.join(', ')} — check the game.`
+      : `Imported ${r.added} keys, ${r.total - r.added} already known`);
+  },
+  'import-recipients': async () => {
+    const r = await api('/api/import/recipients', { method: 'POST', body: JSON.stringify({ text: el('f-text').value }) });
+    closeDialog(); await refresh(); toast(`Imported ${r.added} contacts`);
+  },
+  'steam-setup': async () => {
+    await api('/api/steam-cookie', { method: 'POST', body: JSON.stringify({ cookie: el('f-cookie').value }) });
+    closeDialog(); await refresh(); toast('Connected to Steamworks');
+  },
+  'itad-setup': async () => {
+    await api('/api/config', {
+      method: 'POST',
+      body: JSON.stringify({ itadKey: el('f-itad').value, country: el('f-country').value || undefined }),
+    });
+    closeDialog(); await refresh(); toast('Connected to IsThereAnyDeal');
+  },
+  trace: async () => {
+    const shop = el('f-shop').value.trim();
+    await showKeyRecord(el('f-key').value, shop);
+  },
+  'key-sighted': async () => {
+    await showKeyRecord(
+      el('dlg').dataset.key,
+      el('f-shop').value.trim(),
+      el('f-country')?.value.trim(),
+    );
+  },
+  'key-revoke': async () => {
+    const r = await api('/api/key/revoke', {
+      method: 'POST',
+      body: JSON.stringify({ key: el('dlg').dataset.key, note: el('f-why').value }),
+    });
+    openDialog(`<h3>Recorded</h3>
+      <p class="lede">keyward will stop treating it as waiting. Now do it on Valve's side:</p>
+      <p class="result">${keyChip(r.key, { owner: undefined })}</p>
+      <div class="actions">
+        <a class="storelink" style="padding:10px 14px;border:1px solid var(--rule);border-radius:9px"
+           href="${esc(r.url)}" target="_blank" rel="noreferrer noopener">Open it in Steamworks</a>
+        <button class="primary" data-act="cancel">Done</button></div>`);
+    await refresh();
+  },
+  handout: async () => {
+    const r = await api('/api/handout', {
+      method: 'POST',
+      body: JSON.stringify({
+        game: CURRENT,
+        text: el('f-text').value,
+        batch: el('f-batch-pick')?.value,
+        campaign: el('f-campaign').value,
+      }),
+    });
+    /*
+      The CSV is handed over as a data URI rather than fetched again. Asking the
+      server for it a second time would mean keeping a set of live keys somewhere
+      between two requests, and there is no reason to.
+    */
+    const file = 'data:text/csv;charset=utf-8,' + encodeURIComponent(r.csv);
+    const name = `${CURRENT.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${r.batch}.csv`;
+    openDialog(`<h3>${r.rows.length} handed out</h3>
+      <p class="lede">From <b>${esc(r.batch)}</b>${r.newContacts
+        ? `, and ${r.newContacts} of them were not on your contact list before`
+        : ''}. Every one is on the record now, so a key that turns up for sale can be
+        traced back to the person it went to.</p>
+      <p class="result">${r.rows.slice(0, 3).map((row) =>
+        keyChip(row.key, { owner: row.name })).join(' ')}${
+        r.rows.length > 3 ? `<span class="sub">and ${r.rows.length - 3} more</span>` : ''}</p>
+      <div class="actions">
+        <a class="storelink" style="padding:10px 14px;border:1px solid var(--rule);border-radius:9px"
+           href="${file}" download="${esc(name)}">${icon('import', 14)} Download the CSV</a>
+        <button class="primary" data-act="cancel">Done</button></div>`);
+    await refresh();
+  },
+  'new-batch': async () => {
+    await api('/api/batch', {
+      method: 'POST',
+      body: JSON.stringify({
+        game: CURRENT,
+        name: el('f-batch-name').value,
+        note: el('f-batch-note').value,
+        region: el('f-batch-region').value,
+      }),
+    });
+    closeDialog(); await refresh(); toast('Batch created');
+  },
+  'rename-contact': async () => {
+    const r = await api('/api/contact/rename', {
+      method: 'POST',
+      body: JSON.stringify({ from: el('dlg').dataset.name, to: el('f-contact-to').value }),
+    });
+    closeDialog(); await refresh();
+    toast(r.merged ? `Merged, ${r.moved} keys moved across` : 'Renamed');
+  },
+  'rename-batch': async () => {
+    const r = await api('/api/batch/rename', {
+      method: 'POST',
+      body: JSON.stringify({ game: CURRENT, from: el('dlg').dataset.batch, to: el('f-batch-to').value }),
+    });
+    closeDialog(); await refresh();
+    toast(r.merged ? `Merged, ${r.moved} keys moved across` : 'Renamed');
+  },
+  assign: async () => {
+    const r = await api('/api/assign', { method: 'POST', body: JSON.stringify({
+      game: CURRENT,
+      recipient: el('f-recipient').value,
+      campaign: el('f-campaign').value,
+      batch: el('f-batch-pick')?.value || undefined,
+    }) });
+    openDialog(`<h3>Key for ${esc(r.recipient)}</h3>
+      <p class="lede">Recorded. Send this one to them and nobody else.</p>
+      <p class="result">${keyChip(r.key, { owner: r.recipient })}</p>
+      <div class="actions"><button class="primary" data-act="cancel">Done</button></div>`);
+    await refresh();
+  },
+};
+
+/** One key's record, shown from the trace dialog or from a key's own menu. */
+async function showKeyRecord(rawKey, shop, country) {
+    const r = await api('/api/trace?key=' + encodeURIComponent(rawKey) +
+      (shop ? '&seenOn=' + encodeURIComponent(shop) : '') +
+      (country ? '&country=' + encodeURIComponent(country) : ''));
+
+    if (r.verdict === 'unknown') {
+      return openDialog(`<h3>No record of this key</h3>
+        <p class="lede">keyward has never seen it.</p>
+        <p class="result">${keyChip(r.key, { owner: undefined })}</p>
+        <p class="note">Either you never imported it, or that shop is selling someone else's stock.
+          Shops often sell copies they bought cheap in another region, and some list games they
+          cannot actually supply.</p>${done}`);
+    }
+
+    if (r.verdict === 'unassigned') {
+      return openDialog(`<h3>Yours, but you never sent it to anyone</h3>
+        <p class="lede">${esc(r.game)}, from the ${esc(r.batch)} batch</p>
+        <p class="result">${keyChip(r.key, { owner: null })}</p>
+        <p class="note">You never sent this to anyone, so no contact of yours leaked it. Check where
+          your key exports went, who has the spreadsheet, and who else can generate keys on your
+          Steamworks account.</p>${done}`);
+    }
+
+    openDialog(`<h3>You sent this to ${esc(r.recipient)}</h3>
+      <p class="lede">${esc(r.game)}, from the ${esc(r.batch)} batch${shop ? `, recorded as found on ${esc(shop)}` : ''}</p>
+      <p class="result">${keyChip(r.key, { owner: r.recipient })}</p>
+      <table class="facts"><tbody>
+        <tr><td>Sent to</td><td>${esc(r.recipient)}${r.recipientKind ? ` (${esc(r.recipientKind)})` : ''}</td></tr>
+        ${r.handle ? `<tr><td>Handle</td><td class="key">${esc(r.handle)}</td></tr>` : ''}
+        ${r.email ? `<tr><td>Email</td><td class="key">${esc(r.email)}</td></tr>` : ''}
+        <tr><td>Sent on</td><td class="when">${esc(fmtDate(r.assignedAt))}</td></tr>
+        ${r.campaign ? `<tr><td>Campaign</td><td>${esc(r.campaign)}</td></tr>` : ''}
+      </tbody></table>
+      <p class="note">Two things before you act on this. A reseller may have bought the key fairly
+        from someone further down the chain, so it tells you where the key left <b>your</b> hands,
+        not who made money on it. And revoking it takes the game away from whoever paid for it.
+        Most of the time you want a conversation with whoever holds the contract.</p>${done}`);
+  await refresh();
+}
+
+/* ---------- long-running actions ---------- */
+
+function openItadSetup(problem) {
+  DIALOGS['itad-setup']();
+  el('dlg').dataset.kind = 'itad-setup';
+  if (problem) dialogError(problem);
+}
+
+async function doScan() {
+  // Walk them through getting a key rather than failing with an error toast.
+  if (!STATE.config.itad) return openItadSetup();
+
+  toast('Asking IsThereAnyDeal');
+  try {
+    const r = await api('/api/scan', { method: 'POST', body: JSON.stringify({ game: CURRENT }) });
+    await refresh();
+    toast(`${r.total} shops selling it, ${r.keyshops.length} of them resale sites`);
+  } catch (e) {
+    // A saved key that is wrong or revoked reopens setup, rather than failing
+    // the same way every time with nothing the user can act on.
+    if (e.needsKey) openItadSetup(`The saved key was rejected. ${e.message}`);
+    else toast(e.message);
+  }
+}
+
+function doCheck() {
+  // Same courtesy IsThereAnyDeal gets: walk them through it rather than failing.
+  if (!STATE.config.steam) {
+    DIALOGS['steam-setup']();
+    el('dlg').dataset.kind = 'steam-setup';
+    return;
+  }
+  el('progress').innerHTML = `<div class="verdict" style="padding:20px 24px">
+    <p class="progress" id="p-text">Asking Steam about each key. This takes a couple of minutes.</p>
+    <div class="bar"><i id="p-bar"></i></div></div>`;
+
+  // since=1 means a run that was interrupted and started again carries on
+  // instead of redoing the last hour, without blocking a deliberate re-check.
+  const src = new EventSource(
+    `/api/check?game=${encodeURIComponent(CURRENT)}&since=1&t=${encodeURIComponent(TOKEN)}`);
+  src.onmessage = async (ev) => {
+    const e = JSON.parse(ev.data);
+    if (e.type === 'progress') {
+      el('p-text').textContent = `Checked ${e.done} of ${e.total}`;
+      el('p-bar').style.width = `${(e.done / e.total) * 100}%`;
+    } else if (e.type === 'stopped') {
+      el('p-text').textContent = `Stopped. ${e.message}`;
+    } else if (e.type === 'done') {
+      src.close();
+      await refresh();
+      el('progress').innerHTML = '';
+      toast(e.total === 0 ? 'Everything was already checked' : `Checked ${e.done} keys`);
+    }
+  };
+  src.onerror = () => { src.close(); el('p-text').textContent = 'Lost the connection to keyward.'; };
+}
+
+/* ---------- events ---------- */
+
+document.addEventListener('click', async (ev) => {
+  // Any click that is not on the menu or its trigger dismisses it.
+  if (!ev.target.closest('.menu') && !ev.target.closest('[data-act="key-menu"]')) closeMenu();
+
+  const btn = ev.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  try {
+    if (act === 'copy-key') { await copyKey(btn.dataset.key, btn); closeMenu(); return; }
+    if (act === 'key-menu') {
+      const already = openMenu?.trigger === btn;
+      closeMenu();
+      if (!already) showKeyMenu(btn, btn.dataset.key);
+      return;
+    }
+    if (act === 'key-reveal') {
+      const key = btn.dataset.key;
+      if (REVEALED.has(key)) REVEALED.delete(key); else REVEALED.add(key);
+      closeMenu();
+      await renderView();
+      return;
+    }
+    if (act === 'key-record') { closeMenu(); await showKeyRecord(btn.dataset.key); return; }
+    if (act === 'key-sighted') {
+      closeMenu();
+      DIALOGS['key-sighted']();
+      el('dlg').dataset.kind = 'key-sighted';
+      el('dlg').dataset.key = btn.dataset.key;
+      return;
+    }
+    if (act === 'select') {
+      CURRENT = btn.dataset.game;
+      CONTACTS_CACHE = null;
+      REPORT = await api('/api/report?game=' + encodeURIComponent(CURRENT));
+      render();
+    }
+    else if (act === 'tab') { TAB = btn.dataset.tab; location.hash = TAB; render(); }
+    else if (act === 'filter') { KEY_FILTER = btn.dataset.filter; await renderView(); }
+    else if (act === 'sort-keys') { applySort(KEYS_SORT, btn.dataset.sort); await renderView(); }
+    else if (act === 'sort-contacts') { applySort(CONTACTS_SORT, btn.dataset.sort); await renderView(); }
+    else if (act === 'sort-batches') { applySort(BATCHES_SORT, btn.dataset.sort); await renderView(); }
+    else if (act === 'clear-contact-q') { CONTACT_QUERY = ''; await renderView(); }
+    else if (act === 'rename-contact') {
+      el('dlg').dataset.name = btn.dataset.name;
+      DIALOGS['rename-contact']();
+      el('dlg').dataset.kind = 'rename-contact';
+    }
+    else if (act === 'key-revoke') {
+      closeMenu();
+      el('dlg').dataset.key = btn.dataset.key;
+      DIALOGS['key-revoke']();
+      el('dlg').dataset.kind = 'key-revoke';
+      el('dlg').dataset.key = btn.dataset.key;
+    }
+    else if (act === 'rename-batch') {
+      // The dialog reads the batch name while building itself, so set it first.
+      el('dlg').dataset.batch = btn.dataset.batch;
+      DIALOGS['rename-batch']();
+      el('dlg').dataset.kind = 'rename-batch';
+    }
+    else if (act === 'drill') {
+      // Works from any tab: narrowing by a name or a batch means the keys.
+      KEY_QUERY = btn.dataset.q;
+      if (TAB !== 'keys') { TAB = 'keys'; location.hash = 'keys'; render(); }
+      else await renderView();
+    }
+    else if (act === 'clear-q') { KEY_QUERY = ''; await renderView(); }
+    else if (act === 'clear-filter') { KEY_FILTER = 'all'; await renderView(); }
+    else if (act === 'clear-all') { KEY_QUERY = ''; KEY_FILTER = 'all'; await renderView(); }
+    else if (act === 'see-keys') {
+      KEY_QUERY = btn.dataset.q || '';
+      KEY_FILTER = btn.dataset.filter || 'all';
+      TAB = 'keys'; location.hash = 'keys'; render();
+    }
+    else if (act === 'cancel') closeDialog();
+    else if (act === 'copy') { await navigator.clipboard.writeText(btn.dataset.key); toast('Copied'); }
+    else if (act === 'scan') await doScan();
+    else if (act === 'check') doCheck();
+    else if (act === 'submit') {
+      const box = el('dlg-error');
+      if (box) box.hidden = true; // clear the previous attempt's message
+      await SUBMIT[el('dlg').dataset.kind]();
+    }
+    else if (DIALOGS[act]) { DIALOGS[act](); el('dlg').dataset.kind = act; }
+  } catch (e) {
+    // Inside a dialog the message stays put next to the field that caused it.
+    if (!el('dlg').open || !dialogError(e.message)) toast(e.message);
+  }
+});
+
+/* ---------- picking a file to import ---------- */
+
+let STAGED_FILE = null;
+
+/** Chunked, because spreading a whole file into fromCharCode blows the stack. */
+function toBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+async function stageFile(file) {
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) return dialogError('That file is over 8MB. Paste the keys instead.');
+  STAGED_FILE = { name: file.name, b64: toBase64(await file.arrayBuffer()) };
+  const label = el('f-fname');
+  if (label) label.textContent = file.name;
+  // The textarea is now beside the point; say so rather than leaving both live.
+  const box = el('f-text');
+  if (box) { box.value = ''; box.placeholder = `Using ${file.name}`; }
+}
+
+document.addEventListener('change', (ev) => {
+  if (ev.target.id === 'f-file') void stageFile(ev.target.files?.[0]);
+});
+for (const type of ['dragenter', 'dragover']) {
+  document.addEventListener(type, (ev) => {
+    const zone = ev.target.closest?.('.drop');
+    if (!zone) return;
+    ev.preventDefault();
+    zone.classList.add('over');
+  });
+}
+document.addEventListener('dragleave', (ev) => ev.target.closest?.('.drop')?.classList.remove('over'));
+document.addEventListener('drop', (ev) => {
+  const zone = ev.target.closest?.('.drop');
+  if (!zone) return;
+  ev.preventDefault();
+  zone.classList.remove('over');
+  void stageFile(ev.dataTransfer?.files?.[0]);
+});
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && openMenu) { ev.stopPropagation(); closeMenu(); }
+});
+window.addEventListener('resize', closeMenu);
+
+// Search re-queries the server rather than filtering in the page, so a studio
+// with thousands of keys does not have to ship them all to the browser first.
+let searchTimer;
+document.addEventListener('input', (ev) => {
+  const which = ev.target.id;
+  if (which !== 'key-search' && which !== 'contact-search') return;
+  clearTimeout(searchTimer);
+  const value = ev.target.value;
+  searchTimer = setTimeout(() => {
+    if (which === 'key-search') KEY_QUERY = value;
+    else CONTACT_QUERY = value;
+    void renderView();
+  }, 250);
+});
+
+// Back and forward move between tabs, which is what the address bar implies.
+window.addEventListener('hashchange', () => {
+  const next = location.hash.slice(1);
+  if (TABS.some((t) => t.id === next) && next !== TAB) { TAB = next; render(); }
+});
+
+el('dlg').addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') {
+    ev.preventDefault();
+    el('dlg').querySelector('[data-act="submit"], [data-act="cancel"]')?.click();
+  }
+});
+
+refresh().catch((e) => {
+  el('main').innerHTML = `<div class="verdict"><h2>Cannot reach keyward</h2>
+    <p>${esc(e.message)}</p></div>`;
+});
+</script>
+<!-- dev-reload -->
+</body>
+</html>

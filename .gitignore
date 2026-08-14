@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Never commit real key material or partner session data.
+*.keyward.db
+*.keyward.db-journal
+keys*.csv
+keys*.txt
+recipients*.csv
+.env
+
+# Screenshot recording leftovers
+assets/shots/video/
+
+# Working notes: strategy, outreach drafts, target lists. Not part of the tool.
+notes/

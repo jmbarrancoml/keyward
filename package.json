@@ -1,0 +1,61 @@
+{
+  "name": "keyward",
+  "version": "0.1.0",
+  "description": "Know which review key went to whom, and find out when one turns up for sale. Local-first, zero runtime dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "keyward": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "assets/keyward-icon.svg",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -b && node scripts/copy-assets.mjs",
+    "ui": "npm run build && node dist/cli.js ui",
+    "demo": "npm run build && node dist/cli.js ui --demo",
+    "demo:seed": "npm run build && node dist/cli.js demo --force",
+    "dev": "npm run build && node scripts/dev.mjs",
+    "dev:demo": "npm run build && node scripts/dev.mjs --demo",
+    "test": "npm run build && node --test \"test/**/*.test.js\"",
+    "typecheck": "tsc --noEmit",
+    "shots": "npm run build && node scripts/shots.mjs",
+    "prepublishOnly": "npm run build && npm test",
+    "e2e": "npm run build && node e2e/journey.mjs",
+    "probe": "npm run build && node e2e/probe.mjs",
+    "cli-matrix": "npm run build && node e2e/cli.mjs",
+    "states": "npm run build && node e2e/states.mjs",
+    "verify": "npm run build && node --test \"test/**/*.test.js\" && node e2e/cli.mjs && node e2e/probe.mjs && node e2e/states.mjs && node e2e/journey.mjs"
+  },
+  "keywords": [
+    "steam",
+    "steamworks",
+    "game-keys",
+    "grey-market",
+    "gamedev",
+    "indiedev",
+    "key-management",
+    "cli"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "playwright": "^1.62.1",
+    "typescript": "^5.6.0"
+  },
+  "homepage": "https://github.com/jmbarrancoml/keyward#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmbarrancoml/keyward.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jmbarrancoml/keyward/issues"
+  },
+  "author": "jmbarrancoml"
+}

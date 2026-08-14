@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- 16px variant: same single ring as the mark, strokes thickened so it does
+       not thin out to nothing at tab size. -->
+  <g stroke="currentColor" stroke-linecap="round">
+    <path d="M38.10 20.52A13 13 0 0 1 38.10 43.48" stroke-width="4.6"/>
+    <path d="M25.90 20.52A13 13 0 0 0 25.90 43.48" stroke-width="4.6"/>
+  </g>
+  <g fill="currentColor">
+    <circle cx="32" cy="27" r="6.8"/>
+    <path d="M29.7 30 27.9 41.9A1.7 1.7 0 0 0 29.6 43.6H34.4A1.7 1.7 0 0 0 36.1 41.9L34.3 30Z"/>
+  </g>
+</svg>
